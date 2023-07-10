@@ -279,8 +279,10 @@ def get_content_from_file(
     create_error: Callable[[int, str], Exception],
     resolve_links_arg: Optional[str] = LinkResolution.ONLY_VALID,
     h5py_options: Dict[str, Any] = {},
+    file_resolver: Union[Callable, None]=None
 ):
-    f = open_file_with_error_fallback(filepath, create_error, h5py_options)
+    file = file_resolver(filepath) if file_resolver else filepath
+    f = open_file_with_error_fallback(file, create_error, h5py_options)
 
     try:
         resolve_links = parse_link_resolution_arg(
@@ -307,9 +309,10 @@ def get_list_of_paths(
     create_error: Callable[[int, str], Exception],
     resolve_links_arg: Optional[str] = LinkResolution.ONLY_VALID,
     h5py_options: Dict[str, Any] = {},
+    file_resolver: Union[Callable, None]=None
 ):
-    f = open_file_with_error_fallback(filepath, create_error, h5py_options)
-
+    file = file_resolver(filepath) if file_resolver else filepath
+    f = open_file_with_error_fallback(file, create_error, h5py_options)
     try:
         resolve_links = parse_link_resolution_arg(
             resolve_links_arg,

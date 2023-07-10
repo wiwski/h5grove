@@ -44,9 +44,23 @@ FastAPI router with h5grove endpoints.
 The directory from which files are served can be defined in `settings`.
 """
 
+class FilePathResolver:
+    def __init__(self, resolver_fn: Callable):
+        self.resolver_fn = resolver_fn
+
+    def __call__(self, filepath: Union[str, None] = None):
+        if filepath:
+            return self.resolver_fn(filepath)
+        return False
+
+
 
 class Settings(BaseSettings):
     base_dir: Union[str, None] = None
+    filepath_resolver: Union[FilePathResolver, None]
+
+    def add_filepath_resolver(self, callable: Callable):
+        self.filepath_resolver  = FilePathResolver(callable)
 
 
 settings = Settings()
@@ -89,7 +103,7 @@ async def get_attr(
     attr_keys: Optional[List[str]] = Query(default=None),
 ):
     """`/attr/` endpoint handler"""
-    with get_content_from_file(file, path, create_error) as content:
+    with get_content_from_file(file, path, create_error, file_resolver=settings.filepath_resolver) as content:
         assert isinstance(content, ResolvedEntityContent)
         h5grove_response = encode(content.attributes(attr_keys), "json")
         return Response(
@@ -107,7 +121,7 @@ async def get_data(
     selection=None,
 ):
     """`/data/` endpoint handler"""
-    with get_content_from_file(file, path, create_error) as content:
+    with get_content_from_file(file, path, create_error, file_resolver=settings.filepath_resolver) as content:
         assert isinstance(content, DatasetContent)
         data = content.data(selection, flatten, dtype)
         h5grove_response = encode(data, format)
@@ -124,7 +138,7 @@ async def get_meta(
 ):
     """`/meta/` endpoint handler"""
 
-    with get_content_from_file(file, path, create_error, resolve_links) as content:
+    with get_content_from_file(file, path, create_error, resolve_links, file_resolver=settings.filepath_resolver) as content:
         h5grove_response = encode(content.metadata(), "json")
         return Response(
             content=h5grove_response.content, headers=h5grove_response.headers
@@ -136,7 +150,7 @@ async def get_stats(
     file: str = Depends(add_base_path), path: str = "/", selection=None
 ):
     """`/stats/` endpoint handler"""
-    with get_content_from_file(file, path, create_error) as content:
+    with get_content_from_file(file, path, create_error, file_resolver=settings.filepath_resolver) as content:
         assert isinstance(content, DatasetContent)
         h5grove_response = encode(content.data_stats(selection), "json")
         return Response(
@@ -150,7 +164,7 @@ async def get_paths(
     path: str = "/",
     resolve_links: str = "only_valid",
 ):
-    with get_list_of_paths(file, path, create_error, resolve_links) as paths:
+    with get_list_of_paths(file, path, create_error, resolve_links, file_resolver=settings.filepath_resolver) as paths:
         h5grove_response = encode(paths, "json")
         return Response(
             content=h5grove_response.content, headers=h5grove_response.headers
