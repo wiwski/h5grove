@@ -60,7 +60,7 @@ class FilePathResolver:
 
 class Settings(BaseSettings):
     base_dir: str | None = None
-    filepath_resolver: FilePathResolver | None
+    filepath_resolver: FilePathResolver | None = None
 
     def add_filepath_resolver(self, callable: Callable):
         self.filepath_resolver = FilePathResolver(callable)
