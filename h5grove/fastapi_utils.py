@@ -57,7 +57,7 @@ class FilePathResolver:
 
 class Settings(BaseSettings):
     base_dir: Union[str, None] = None
-    filepath_resolver: Union[FilePathResolver, None]
+    filepath_resolver: Union[FilePathResolver, None] = None
 
     def add_filepath_resolver(self, callable: Callable):
         self.filepath_resolver  = FilePathResolver(callable)
