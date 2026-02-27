@@ -297,7 +297,10 @@ def get_content_from_file(
     create_error: Callable[[int, str], Exception],
     resolve_links_arg: str | None = LinkResolution.ONLY_VALID,
     h5py_options: dict[str, Any] = {},
+    file_resolver: Callable | None = None,
 ):
+    file = file_resolver(filepath) if file_resolver else filepath
+
     try:
         resolve_links = parse_link_resolution_arg(
             resolve_links_arg,
@@ -307,7 +310,7 @@ def get_content_from_file(
         raise create_error(422, str(e))
 
     try:
-        with open_file_with_error_fallback(filepath, create_error, h5py_options) as f:
+        with open_file_with_error_fallback(file, create_error, h5py_options) as f:
             yield create_content(f, path, resolve_links)
     except NotFoundError as e:
         raise create_error(404, str(e))
@@ -322,7 +325,10 @@ def get_list_of_paths(
     create_error: Callable[[int, str], Exception],
     resolve_links_arg: str | None = LinkResolution.ONLY_VALID,
     h5py_options: dict[str, Any] = {},
+    file_resolver: Callable | None = None,
 ):
+    file = file_resolver(filepath) if file_resolver else filepath
+    f = open_file_with_error_fallback(file, create_error, h5py_options)
     try:
         resolve_links = parse_link_resolution_arg(
             resolve_links_arg,
@@ -339,7 +345,7 @@ def get_list_of_paths(
         names.append(content.path)
 
     try:
-        with open_file_with_error_fallback(filepath, create_error, h5py_options) as f:
+        with open_file_with_error_fallback(file, create_error, h5py_options) as f:
             base_content = create_content(f, base_path, resolve_links)
             if not isinstance(base_content, GroupContent):
                 raise TypeError(f"{base_content.path} is not a group")
